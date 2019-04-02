@@ -34,26 +34,27 @@ fun getCurrentSSID(context: Context): String? {
 }
 
 fun autoLink(ssid: String, psw: String, callback: Callback): Closeable {
-    val socketManager = SocketManager()
-    thread {
-        socketManager.sendPackage(AirKissEncoder(ssid, psw).getEncodedData(), {
-            // 发送成功
+    if (SocketManager.mIsFinished) {
+        thread {
+            SocketManager.sendPackage(AirKissEncoder(ssid, psw).getEncodedData(), {
+                // 发送成功
 
-        }, {
-            // 发送失败
-            onFailure(callback, it)
-        })
+            }, {
+                // 发送失败
+                onFailure(callback, it)
+            })
+        }
+        thread {
+            SocketManager.receivePackage({
+                // 接收成功
+                onSuccess(callback)
+            }, {
+                // 接收失败
+                onFailure(callback, it)
+            })
+        }
     }
-    thread {
-        socketManager.receivePackage({
-            // 接收成功
-            onSuccess(callback)
-        }, {
-            // 接收失败
-            onFailure(callback, it)
-        })
-    }
-    return socketManager
+    return SocketManager
 }
 
 private fun onSuccess(callback: Callback) {

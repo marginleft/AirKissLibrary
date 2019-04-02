@@ -8,11 +8,15 @@ import java.net.InetAddress
  * @author margintop
  * @date 2019/4/1
  */
-internal class SocketManager : Closeable {
+internal object SocketManager : Closeable {
 
     private var mSendSocket: DatagramSocket? = null
     private var mUdpServerSocket: DatagramSocket? = null
+    @Volatile
+    var mIsFinished: Boolean = true
+        private set
 
+    @Synchronized
     fun sendPackage(data: IntArray, success: () -> Unit, error: (String?) -> Unit) {
         try {
             mSendSocket = DatagramSocket().apply {
@@ -38,10 +42,12 @@ internal class SocketManager : Closeable {
         }
     }
 
+    @Synchronized
     fun receivePackage(success: () -> Unit, error: (String?) -> Unit) {
         try {
+            mIsFinished = false
             mUdpServerSocket = DatagramSocket(12476).apply {
-                soTimeout = 5 * 60 * 1000
+                soTimeout = 2 * 60 * 1000
             }
             val buffer = ByteArray(15000)
             val packet = DatagramPacket(buffer, buffer.size)
@@ -58,6 +64,7 @@ internal class SocketManager : Closeable {
             e.printStackTrace()
             error(e.message)
         } finally {
+            mIsFinished = true
             mUdpServerSocket?.close()
             mUdpServerSocket?.disconnect()
         }
