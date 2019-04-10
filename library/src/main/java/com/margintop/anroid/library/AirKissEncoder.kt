@@ -12,19 +12,16 @@ class AirKissEncoder(ssid: String, password: String) {
     private val mEncodedData by lazy {
         IntArray(2 shl 14)
     }
-    private val mRandomChar by lazy {
-        Random.nextInt(0x7F)
-    }
 
     init {
-        var times = 5;
+        var times = 5
         while (times-- > 0) {
             leadingPart()
             magicCode(ssid, password)
             for (i in 0 until 15) {
                 prefixCode(password)
 
-                val data = password + mRandomChar + ssid
+                val data = password + Random.nextInt(0x7F) + ssid
                 var content = ByteArray(4)
                 var index = 0
                 while (index < data.length / 4) {
@@ -57,8 +54,9 @@ class AirKissEncoder(ssid: String, password: String) {
         val length = ssid.length + password.length + 1;
         val magicCode = IntArray(4)
         magicCode[0] = 0x00 or (length.ushr(4) and 0xF)
-        if (magicCode[0] == 0)
+        if (magicCode[0] == 0) {
             magicCode[0] = 0x08
+        }
         magicCode[1] = 0x10 or (length and 0xF)
         val crc8 = crc8(ssid)
         magicCode[2] = 0x20 or (crc8.ushr(4) and 0xF)
